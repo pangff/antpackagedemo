@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="antpackage" default="final">
+    <property file="ant.properties"/>
+	<property file="project.properties"/>
+    <import file="base-build.xml" />
+    
+    
+     <!-- 自有渠道 -->
+    <target name="baidu" >
+        <property name="channel-id" value="001" />
+        <antcall target="-make-one-channel"/>
+    </target>
+    
+    <!-- 002:安智  -->
+    <target name="360" >
+        <property name="channel-id" value="002" />
+        <antcall target="-make-one-channel"/>
+    </target>
+
+	
+    <!-- 渠道包环境 -->
+	<target name="-dev-evn" >
+		 <property name="release-env" value="dev" />
+	     <property name="config.dir" value="config" />
+	     <property name="config.absolute.dir" location="${config.dir}" />
+		 <property name="config-file" value="${config.absolute.dir}/conf-${release-env}.properties" />
+		 <property file="${config-file}" />	
+		 <property name="old_ak" value="${ak}" />
+	</target>
+	<target name="-test-evn" >
+		 <property name="release-env" value="test" />
+	     <property name="config.dir" value="config" />
+	     <property name="config.absolute.dir" location="${config.dir}" />
+		 <property name="config-file" value="${config.absolute.dir}/conf-${release-env}.properties" />
+		 <property file="${config-file}" />	
+		 <property name="old_ak" value="${ak}" />
+	</target>
+	<target name="-prod-evn">
+		<property name="release-env" value="prod" />
+	     <property name="config.dir" value="config" />
+	     <property name="config.absolute.dir" location="${config.dir}" />
+		 <property name="config-file" value="${config.absolute.dir}/conf-${release-env}.properties" />
+		 <property file="${config-file}" />	
+		 <property name="old_ak" value="${ak}" />
+	</target>
+	
+	
+	 <target name="clear-apk-dir">
+        <delete dir="${apk.out.dir}/" />
+    </target>
+   
+	 <!-- 
+	<target name="-mk-one-dir">
+        <mkdir dir="${apk.out.dir}/${letter}/" />
+        <antcall target="-copy-018-apk"/>
+    </target>
+   
+	<target name="-copy-018-apk">
+	    <if>
+	        <condition>
+	            <available file="${apk.out.dir}/018/${app.name}.apk" />
+	        </condition>
+        		<then>
+        		    <echo>018APK is available</echo>
+	   			<copy file="${apk.out.dir}/018/${app.name}.apk" tofile="${apk.out.dir}/${letter}/${app.name}.apk" overwrite="false" /> 
+        		</then>
+	   </if>
+	</target>
+	 
+	 <target name="-mk-result-dirs">
+	     <if>
+	        <condition>
+	            <available file="${apk.out.dir}/018/${app.name}.apk" />
+	        </condition>
+        <then>
+       		<echo>${reulst.list}</echo>
+        		<foreach target="-mk-one-dir" list="${reulst.list}" delimiter="," param="letter">
+        		</foreach>
+        	</then>
+	   </if>
+     </target> -->
+  
+	 <!-- 全部渠道 -->
+     <target name="final-release" depends="clean,clear-apk-dir,-prod-evn,-set-release-mode, -release-obfuscation-check, -package">
+         <antcall target="baidu" />
+         <antcall target="360" />
+		<antcall target="clean"/>
+<!-- 		<antcall target="-mk-result-dirs"/>-->
+     </target>
+    
+    
+    <!-- 首发 -->
+    <target name="first-release" depends="clean,clear-apk-dir,-prod-evn,-set-release-mode, -release-obfuscation-check, -package">
+		<property name="channel-id" value="${first_market_id}"/>
+		<antcall target="-make-one-channel"/>
+		<antcall target="clean"/>
+    </target>
+    
+      <!-- 开发环境 -->
+    <target name="dev-first-release" depends="clean,clear-apk-dir,-dev-evn,-set-release-mode, -release-obfuscation-check, -package">
+		<property name="channel-id" value="${first_market_id}"/>
+		<antcall target="-make-one-channel"/>
+		<antcall target="clean"/>
+    </target>
+    
+     <!-- 测试环境 首发-->
+     <target name="test-first-release" depends="clean,clear-apk-dir,-test-evn,-set-release-mode, -release-obfuscation-check, -package">
+        <property name="releas-env" value="test" />
+		<property name="channel-id" value="${first_market_id}"/>
+		<antcall target="-make-one-channel"/>
+		<antcall target="clean"/>
+    </target>
+     
+</project>

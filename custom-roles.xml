@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="custom_build" default="final">
+   
+	
+	<property name="build-file" value="${basedir}/build.properties" />
+	<property file="${build-file}" />
+	
+	
+    <scriptdef name="substring" language="javascript">
+			<attribute name="text" />
+		    <attribute name="start" />
+		    <attribute name="end" />
+		    <attribute name="property" />
+		     <![CDATA[
+		       var text = attributes.get("text");
+		       var start = attributes.get("start");
+		       var end = attributes.get("end") || text.length();
+		       project.setProperty(attributes.get("property"), text.substring(start, end));
+		     ]]>
+	  	</scriptdef>
+	
+	 <!-- 修改Manifest文件 -->
+	<target name="-modify-manifest" depends="-prod-config-file">
+	    <!-- 被封Manifest文件 -->
+	    <copy tofile="${out.manifest.abs.file.bak}" file="${out.manifest.abs.file}" overwrite="true" />
+	    <!-- 替换渠道 -->
+	    <echo>Replace Manifest:${channel-id}</echo>
+		
+		<replaceregexp file="${out.manifest.abs.file}" flags="g" byline="false">
+			<regexp pattern="(android:value=&quot;(.*)&quot;\s*android:name=&quot;UMENG_CHANNEL&quot;)|(android:name=&quot;UMENG_CHANNEL&quot;\s*android:value=&quot;(.*)&quot;)" />
+			<substitution expression="android:name=&quot;UMENG_CHANNEL&quot; android:value=&quot;${channel-id}&quot;" />
+		</replaceregexp>
+		 <!--     <attr path="//manifest" attr="android:versionName" value="${manifest_v_name}" />  
+        <attr path="//manifest" attr="android:versionCode" value="${manifest_v_code}" />  -->
+	</target>
+	<!-- 修改Manifest文件 结束-->
+    
+	<!-- 修改AK -->
+    <target name="-prod-config-file">
+		<substring text="${ak_version}" start="0" end="2" property="ak_base" />
+		<substring text="${ak_version}" start="2" end="6" property="ak_updata" />
+     	<echo message="baseak : ${ak_base}  updataak : ${ak_updata}" />
+		<property name="new_ak" value="${ak_base}${ak_platform}${ak_product}${channel-id}${ak_updata}" />
+		<echo>Replace AK－－old_ak:${ak}</echo>
+		<echo>Replace AK－－new_ak:${new_ak}</echo>
+		<copy file="${config-file}" tofile="${asset.absolute.dir}/conf.properties" overwrite="true" />
+		<replace file="${asset.absolute.dir}/conf.properties" token="ak=${old_ak}" value="ak=${new_ak}" />
+		
+		<!-- 替换是否首发 -->
+		<echo>${channel-id} == ${first_market_id}, is_first_market: ${is_first_market}</echo>
+		 <if >
+		     <condition >
+				<equals arg1="${channel-id}" arg2="${first_market_id}" />
+			</condition>
+			<then>
+			     <antcall target="change_first_market"/>
+			</then>
+		     <else>
+		         <antcall target="change_first_market_ifnot"/>
+		     </else>
+		 </if>
+	</target>
+	<!-- 修改AK结束 -->
+    
+    <!-- 签名结束后创建渠道目录 拷贝 -->
+    <target name="-make-dist-channel-dir">
+		<delete dir="${apk.out.dir}/${channel-id}/" />
+		<mkdir dir="${apk.out.dir}/${channel-id}/" />
+	</target>
+	
+    <target name="-custom-post-build" depends="-make-dist-channel-dir">
+		<copy file="${out.final.file}" tofile="${apk.out.dir}/${channel-id}/${app.name}.apk" overwrite="true" /> 
+		<delete file="${out.final.file}"></delete>  
+    </target>
+    <!--签名结束后创建渠道目录 拷贝 结束  -->
+    
+    <!--修改首发状态  -->
+    <!-- 是首发 -->
+    <target name="change_first_market">
+		<replace file="${asset.absolute.dir}/conf.properties" token="is_market_first=0" value="is_market_first=1" />
+	</target>
+	
+    <!-- 不是首发 -->
+	<target name="change_first_market_ifnot">
+		<replace file="${asset.absolute.dir}/conf.properties" token="is_market_first=1" value="is_market_first=0" />
+	</target>
+	<!--修改首发状态 结束 -->
+</project>
